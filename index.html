@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ফিজিক্স ২য় অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question: "নিচের কোনটি অন্তরক?",
+          options: {
+            a: "সিরামিক",
+            b: "বিসমাথ",
+            c: "সিলিকন",
+            d: "লোহা",
+          },
+          correct: "a",
+          explanation:
+            "অন্তরক হলো এমন পদার্থ যা সহজে বিদ্যুৎ পরিবহন করে না। সিরামিক একটি অন্তরক পদার্থ। বিসমাথ ও লোহা পরিবাহী এবং সিলিকন অর্ধপরিবাহী।",
+        },
+        {
+          id: 2,
+          question: "নিচের কোনটি সেমিকন্ডাক্টর/বিশুদ্ধ অর্ধপরিবাহী পদার্থ?",
+          options: {
+            a: "অ্যালুমিনিয়াম",
+            b: "সিলিকন",
+            c: "গ্লাস",
+            d: "সিরামিক",
+          },
+          correct: "b",
+          explanation:
+            "সিলিকন একটি বিশুদ্ধ অর্ধপরিবাহী পদার্থ। অ্যালুমিনিয়াম পরিবাহী, এবং গ্লাস ও সিরামিক অন্তরক।",
+        },
+        {
+          id: 3,
+          question: "নিচের কোনটি অর্ধপরিবাহী নয়?",
+          options: {
+            a: "গ্যালিয়াম আর্সেনাইট",
+            b: "আরজেনটাম",
+            c: "জার্মেনিয়াম",
+            d: "সিলিকন",
+          },
+          correct: "b",
+          explanation:
+            "আরজেনটাম (রূপা) একটি সুপরিবাহী ধাতু, অর্ধপরিবাহী নয়। গ্যালিয়াম আর্সেনাইট, জার্মেনিয়াম এবং সিলিকন সকলেই অর্ধপরিবাহী।",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি অপরিবাহী?",
+          options: {
+            a: "সিলিকন",
+            b: "কাঁচ",
+            c: "তামা",
+            d: "অ্যালুমিনিয়াম",
+          },
+          correct: "b",
+          explanation:
+            "কাঁচ একটি অপরিবাহী (অন্তরক) পদার্থ। সিলিকন অর্ধপরিবাহী, এবং তামা ও অ্যালুমিনিয়াম পরিবাহী।",
+        },
+        {
+          id: 5,
+          question: "অর্ধপরিবাহী নয় কোনটি?",
+          options: {
+            a: "সিলিকন",
+            b: "অভ্র",
+            c: "জার্মেনিয়াম",
+            d: "সেলেনিয়াম",
+          },
+          correct: "b",
+          explanation:
+            "অভ্র একটি অন্তরক পদার্থ, অর্ধপরিবাহী নয়। সিলিকন, জার্মেনিয়াম এবং সেলেনিয়াম সকলেই অর্ধপরিবাহী।",
+        },
+        {
+          id: 6,
+          question: "ডোপান্ট কী?",
+          options: {
+            a: "অপরিবাহীর সাথে মিশ্রিত অপদ্রব্য",
+            b: "অর্ধপরিবাহীর সাথে মিশ্রিত অপদ্রব্য",
+            c: "পরিবাহীর সাথে মিশ্রিত অপদ্রব্য",
+            d: "পরিবাহীর সাথে অপরিবাহীর মিশ্রণ",
+          },
+          correct: "b",
+          explanation:
+            "অর্ধপরিবাহীর পরিবাহিতা বাড়ানোর জন্য যে অপদ্রব্য মিশ্রিত করা হয়, তাকে ডোপান্ট বলে।",
+        },
+        {
+          id: 7,
+          question: "কোনটি সুপরিবাহী নয়?",
+          options: {
+            a: "কপার",
+            b: "কার্বন",
+            c: "সিলভার",
+            d: "অ্যালুমিনিয়াম",
+          },
+          correct: "b",
+          explanation:
+            "কপার, সিলভার এবং অ্যালুমিনিয়াম সুপরিবাহী ধাতু। কার্বনের গ্রাফাইট রূপটি পরিবাহী হলেও ডায়মন্ড রূপটি অন্তরক। பொதுவாக, কার্বনকে সুপরিবাহী হিসাবে ধরা হয় না।",
+        },
+        {
+          id: 8,
+          question: "নিম্নের কোনটির ভিত্তিতে কম্পিউটার আবিষ্কার করা হয়েছে?",
+          options: {
+            a: "ইউরেনিয়াম",
+            b: "ক্রোমিয়াম",
+            c: "সিলিকন",
+            d: "কার্বন",
+          },
+          correct: "c",
+          explanation:
+            "কম্পিউটারের চিপস এবং অন্যান্য ইলেকট্রনিক উপাদান তৈরিতে সিলিকন ব্যাপকভাবে ব্যবহৃত হয়, কারণ এটি একটি অর্ধপরিবাহী পদার্থ এবং এর বৈশিষ্ট্যই আধুনিক ইলেকট্রনিক্স শিল্পের মূল ভিত্তি।",
+        },
+        {
+          id: 9,
+          question:
+            "ডোপায়নের মাধ্যমে বহির্জাত অর্ধপরিবাহী তৈরিতে নিম্নের কোন মৌল ব্যবহৃত হয়?",
+          options: {
+            a: "প্লাটিনাম",
+            b: "আর্সেনিক",
+            c: "নিকেল",
+            d: "টাংস্টেন",
+          },
+          correct: "b",
+          explanation:
+            "বহির্জাত অর্ধপরিবাহী তৈরি করতে ডোপান্ট হিসেবে আর্সেনিক (পঞ্চযোজী) ব্যবহার করা হয়, যা n-টাইপ অর্ধপরিবাহী তৈরি করে।",
+        },
+        {
+          id: 10,
+          question: "নিম্নের কোনটিতে ওহমের সূত্রের প্রয়োগ করা যায় না?",
+          options: {
+            a: "এ-সি বর্তনী",
+            b: "বিদ্যুৎ পরিবাহী পদার্থ",
+            c: "অর্ধ বিদ্যুৎ পরিবাহী পদার্থ",
+            d: "বিদ্যুৎ পরিবাহী পদার্থ, যেখানে তাপমাত্রার পরিবর্তন করা হয়েছে",
+          },
+          correct: "c",
+          explanation:
+            "ওহমের সূত্র (V=IR) পরিবাহী পদার্থের জন্য প্রযোজ্য। অর্ধপরিবাহীর ক্ষেত্রে, তাপমাত্রা বা ভোল্টেজের সাথে রোধ পরিবর্তন হয়, তাই ওহমের সূত্র সরাসরি প্রযোজ্য নয়।",
+        },
+        {
+          id: 11,
+          question:
+            "একটি অর্ধপরিবাহীতে যদি ইলেকট্রন ও হোলের সংখ্যা যথাক্রমে ne ও np হয় তাহলে ইনট্রিনসিক অর্ধপরিবাহীতে-",
+          options: {
+            a: "ne = np",
+            b: "ne < np",
+            c: "ne > np",
+            d: "কোনোটিই নয়",
+          },
+          correct: "a",
+          explanation:
+            "ইনট্রিনসিক (বিশুদ্ধ) অর্ধপরিবাহীতে তাপীয় কারণে উৎপন্ন মুক্ত ইলেকট্রন ও হোলের সংখ্যা সর্বদা সমান হয়, অর্থাৎ ne = np।",
+        },
+        {
+          id: 12,
+          question:
+            "একটি p-টাইপের অর্ধপরিবাহী তৈরি করার জন্য বিশুদ্ধ সিলিকনকে যে অপদ্রব্য পরমাণু দিয়ে ডোপিং করা হয়, সেটি-",
+          options: {
+            a: "ফসফরাস",
+            b: "কার্বন",
+            c: "অ্যান্টিমনি",
+            d: "অ্যালুমিনিয়াম",
+          },
+          correct: "d",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহী তৈরি করতে বিশুদ্ধ সিলিকনের (চতুর্যোজী) সাথে ত্রিযোজী অপদ্রব্য, যেমন অ্যালুমিনিয়াম, বোরন, গ্যালিয়াম ইত্যাদি মিশ্রিত করা হয়।",
+        },
+        {
+          id: 13,
+          question:
+            "স্বাভাবিক তাপমাত্রার p-টাইপ অর্ধপরিবাহীর পরিবাহী আধান কোনটি?",
+          options: {
+            a: "শুধুমাত্র হোল",
+            b: "শুধুমাত্র ইলেকট্রন",
+            c: "ধনাত্মক আয়ন",
+            d: "হোল ও ইলেকট্রন",
+          },
+          correct: "a",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহীতে হোল হলো সংখ্যাগরিষ্ঠ আধান বাহক (majority charge carrier)। যদিও কিছু সংখ্যক ইলেকট্রনও থাকে, তবে প্রধান পরিবাহী আধান হলো হোল।",
+        },
+        {
+          id: 14,
+          question: "p-টাইপ সেমিকন্ডাক্টর হলো-",
+          options: {
+            a: "একটি intrinsic সেমিকন্ডাক্টর",
+            b: "একটি extrinsic সেমিকন্ডাক্টর",
+            c: "একটি সুপার সেমিকন্ডাক্টর",
+            d: "কোনোটিই নয়",
+          },
+          correct: "b",
+          explanation:
+            "p-টাইপ সেমিকন্ডাক্টর হলো এক ধরনের বহির্জাত (extrinsic) অর্ধপরিবাহী, যা বিশুদ্ধ অর্ধপরিবাহীর সাথে অপদ্রব্য মিশিয়ে তৈরি করা হয়।",
+        },
+        {
+          id: 15,
+          question: "তাপমাত্রা বাড়ালে অর্ধপরিবাহীর রোধ-",
+          options: {
+            a: "কমবে",
+            b: "বৃদ্ধি পাবে",
+            c: "পরিবর্তন হবে না",
+            d: "শূন্য হবে",
+          },
+          correct: "a",
+          explanation:
+            "অর্ধপরিবাহীর ক্ষেত্রে, তাপমাত্রা বাড়ালে ইলেকট্রন এবং হোলের সংখ্যা বৃদ্ধি পায়, ফলে তাদের পরিবাহিতা বৃদ্ধি পায় এবং রোধ কমে যায়।",
+        },
+        {
+          id: 16,
+          question:
+            "তাপমাত্রা বৃদ্ধি করলে অর্ধপরিবাহীর তড়িৎ পরিবাহিতার কী ঘটবে?",
+          options: {
+            a: "বৃদ্ধি পায়",
+            b: "হ্রাস পায়",
+            c: "একই থাকে",
+            d: "প্রথমে হ্রাস পায় পরে বৃদ্ধি পায়",
+          },
+          correct: "a",
+          explanation:
+            "তাপমাত্রা বৃদ্ধি করলে অর্ধপরিবাহীতে অধিক সংখ্যক ইলেকট্রন যোজন ব্যান্ড থেকে পরিবহন ব্যান্ডে চলে যায়, ফলে মুক্ত ইলেকট্রন ও হোলের সংখ্যা বৃদ্ধি পায় এবং তড়িৎ পরিবাহিতা বৃদ্ধি পায়।",
+        },
+        {
+          id: 17,
+          question: "অর্ধপরিবাহীর শক্তি ব্যবধান-",
+          options: {
+            a: "2.5 eV",
+            b: "1 eV",
+            c: "3 eV",
+            d: "7 eV",
+          },
+          correct: "b",
+          explanation:
+            "অর্ধপরিবাহীর শক্তি ব্যবধান (band gap) সাধারণত 1 eV এর কাছাকাছি হয়। যেমন, সিলিকনের জন্য প্রায় 1.12 eV এবং জার্মেনিয়ামের জন্য প্রায় 0.67 eV।",
+        },
+        {
+          id: 18,
+          question: "বিপরীত বায়াসযুক্ত p-n সংযোগের রোধ-",
+          options: {
+            a: "0",
+            b: "কম",
+            c: "বেশি",
+            d: "অসীম",
+          },
+          correct: "d",
+          explanation:
+            "বিপরীত বায়াসে (reverse bias) p-n সংযোগের রোধ অত্যন্ত বেশি হয়, আদর্শ অবস্থায় অসীম। এটি ডায়োডের মাধ্যমে খুব কম কারেন্ট প্রবাহকে অনুমতি দেয়।",
+        },
+        {
+          id: 19,
+          question:
+            "জার্মেনিয়ামের সাথে নিচের কোন মৌলটি যুক্ত করলে n-টাইপ অর্ধপরিবাহী তৈরি হয়?",
+          options: {
+            a: "অ্যালুমিনিয়াম",
+            b: "গ্যালিয়াম",
+            c: "আর্সেনিক",
+            d: "ইন্ডিয়াম",
+          },
+          correct: "c",
+          explanation:
+            "n-টাইপ অর্ধপরিবাহী তৈরি করতে বিশুদ্ধ জার্মেনিয়াম (চতুর্যোজী) এর সাথে পঞ্চযোজী অপদ্রব্য, যেমন আর্সেনিক, ফসফরাস, অ্যান্টিমনি ইত্যাদি মিশ্রিত করা হয়।",
+        },
+        {
+          id: 20,
+          question: "অর্ধপরিবাহীর বৈশিষ্ট্য নয় কোনটি?",
+          options: {
+            a: "তাপমাত্রা বৃদ্ধি পেলে রোধ হ্রাস পায়",
+            b: "গঠন কেলাস আকৃতির",
+            c: "আপেক্ষিক রোধ 10⁴ Ωm - 0.50 Ωm",
+            d: "পরিবহন ব্যান্ডে প্রচুর মুক্ত ইলেকট্রন থাকে",
+          },
+          correct: "d",
+          explanation:
+            "অর্ধপরিবাহীতে স্বাভাবিক তাপমাত্রায় পরিবহন ব্যান্ডে মুক্ত ইলেকট্রনের সংখ্যা পরিবাহীর তুলনায় অনেক কম থাকে। পরিবাহীতে প্রচুর মুক্ত ইলেকট্রন থাকে।",
+        },
+        {
+          id: 21,
+          question: "নিচের কোনটি অর্ধপরিবাহী?",
+          options: {
+            a: "Fe₂O₃",
+            b: "SiO₂",
+            c: "GaAs",
+            d: "CuO",
+          },
+          correct: "c",
+          explanation:
+            "গ্যালিয়াম আর্সেনাইড (GaAs) একটি যৌগিক অর্ধপরিবাহী। Fe₂O₃ (আয়রন অক্সাইড) এবং SiO₂ (সিলিকন ডাই অক্সাইড) অন্তরক।",
+        },
+        {
+          id: 22,
+          question: "p-টাইপ অর্ধপরিবাহীতে অপদ্রব্য হিসেবে থাকে-",
+          options: {
+            a: "দ্বিযোজী মৌল",
+            b: "ত্রিযোজী মৌল",
+            c: "চতুর্যোজী মৌল",
+            d: "পঞ্চযোজী মৌল",
+          },
+          correct: "b",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহী তৈরি করতে বিশুদ্ধ অর্ধপরিবাহীর (চতুর্যোজী) সাথে ত্রিযোজী অপদ্রব্য (যেমন বোরন, অ্যালুমিনিয়াম) মিশ্রিত করা হয়।",
+        },
+        {
+          id: 23,
+          question:
+            "বিশুদ্ধ জার্মেনিয়ামের সঙ্গে কোন অপদ্রব্য p-টাইপ অর্ধপরিবাহী উৎপন্ন হবে?",
+          options: {
+            a: "ফসফরাস",
+            b: "বোরন",
+            c: "অ্যান্টিমনি",
+            d: "কোনোটিই নয়",
+          },
+          correct: "b",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহী তৈরি করতে জার্মেনিয়ামের (চতুর্যোজী) সাথে ত্রিযোজী অপদ্রব্য মিশাতে হয়। বোরন একটি ত্রিযোজী মৌল।",
+        },
+        {
+          id: 24,
+          question:
+            "পরম শূন্য উষ্ণতায় একটি অর্ধপরিবাহী নিম্নের কোনটির মতো আচরণ করে?",
+          options: {
+            a: "অন্তরক পদার্থ",
+            b: "একটি সুপার পরিবাহী",
+            c: "একটি বিশুদ্ধ অর্ধপরিবাহী",
+            d: "কোনোটিই নয়",
+          },
+          correct: "a",
+          explanation:
+            "পরম শূন্য উষ্ণতায় (0 কেলভিন) অর্ধপরিবাহীতে কোনো মুক্ত ইলেকট্রন থাকে না, তাই এটি অন্তরক পদার্থের মতো আচরণ করে।",
+        },
+        {
+          id: 25,
+          question: "অর্ধপরিবাহীতে নিষিদ্ধ শক্তি পট্টির বেধ কত?",
+          options: {
+            a: "1 MeV",
+            b: "0.1 MeV",
+            c: "1 eV",
+            d: "5 eV",
+          },
+          correct: "c",
+          explanation:
+            "অর্ধপরিবাহীতে নিষিদ্ধ শক্তি পট্টির বেধ (ব্যান্ড গ্যাপ) সাধারণত প্রায় 1 eV এর কাছাকাছি হয় (যেমন, সিলিকনের জন্য 1.12 eV)।",
+        },
+        {
+          id: 26,
+          question:
+            "যোজন ব্যান্ড ও পরিবহণ ব্যান্ড পরস্পরে মিলে গেলে পদার্থটির প্রকৃতি কী?",
+          options: {
+            a: "অতি পরিবাহী",
+            b: "পরিবাহী",
+            c: "অর্ধপরিবাহী",
+            d: "অন্তরক",
+          },
+          correct: "b",
+          explanation:
+            "যদি যোজন ব্যান্ড এবং পরিবহন ব্যান্ড পরস্পরের সাথে মিলে যায় (ওভারল্যাপ করে), তাহলে ইলেকট্রনগুলো অবাধে চলাচল করতে পারে, ফলে পদার্থটি পরিবাহীর মতো আচরণ করে।",
+        },
+        {
+          id: 27,
+          question:
+            "পরিবাহী পদার্থের যোজন ব্যান্ড ও পরিবহণ ব্যান্ডের মধ্যে শক্তি ব্যবধান-",
+          options: {
+            a: "< 1.1 eV",
+            b: "1.1 eV",
+            c: "(6 - 15) eV",
+            d: "0 eV",
+          },
+          correct: "d",
+          explanation:
+            "পরিবাহী পদার্থের ক্ষেত্রে যোজন ব্যান্ড এবং পরিবহন ব্যান্ড একে অপরের সাথে ওভারল্যাপ করে, অর্থাৎ তাদের মধ্যে কোনো শক্তি ব্যবধান (ব্যান্ড গ্যাপ) থাকে না। তাই শক্তি ব্যবধান 0 eV।",
+        },
+        {
+          id: 28,
+          question: "নিচের কোনটি শক্তি ব্যান্ড?",
+          options: {
+            a: "যোজন ব্যান্ড",
+            b: "পরিবহন ব্যান্ড",
+            c: "নিষিদ্ধ ব্যান্ড",
+            d: "সবকটি",
+          },
+          correct: "d",
+          explanation:
+            "শক্তি ব্যান্ড বলতে যোজন ব্যান্ড, পরিবহন ব্যান্ড এবং এদের মধ্যবর্তী নিষিদ্ধ ব্যান্ড সকলকেই বোঝায়, যা পদার্থের ইলেক্ট্রনিক গঠন ব্যাখ্যা করে।",
+        },
+        {
+          id: 29,
+          question: "অন্তরক পদার্থের আপেক্ষিক রোধের ক্রম কত?",
+          options: {
+            a: "10⁴ Ωm",
+            b: "10¹² Ωm",
+            c: "10⁻⁶ Ωm",
+            d: "10⁻¹² Ωm",
+          },
+          correct: "b",
+          explanation:
+            "অন্তরক পদার্থের আপেক্ষিক রোধ (resistivity) অত্যন্ত উচ্চ হয়, যা প্রায় 10<sup>11</sup> থেকে 10<sup>19</sup> Ωm এর মধ্যে থাকে। তাই 10<sup>12</sup> Ωm ক্রমের একটি সাধারণ মান।",
+        },
+        {
+          id: 30,
+          question: "নিচের কোনটি অর্ধপরিবাহীর বৈশিষ্ট্য নয়?",
+          options: {
+            a: "0K তাপমাত্রায় এরা অন্তরক",
+            b: "তাপমাত্রা বৃদ্ধির সাথে এদের তড়িৎ পরিবাহিতা বৃদ্ধি পায়",
+            c: "উপযুক্ত অপদ্রব মিশ্রণে এদের তড়িৎ পরিবাহিতা বৃদ্ধি পায়",
+            d: "এদের আপেক্ষিক রোধ 10¹² Ωm ক্রমের",
+          },
+          correct: "d",
+          explanation:
+            "অর্ধপরিবাহীর আপেক্ষিক রোধ সাধারণত 10<sup>-5</sup> থেকে 10<sup>6</sup> Ωm এর মধ্যে থাকে। 10<sup>12</sup> Ωm ক্রমের আপেক্ষিক রোধ অন্তরক পদার্থের বৈশিষ্ট্য।",
+        },
+        {
+          id: 31,
+          question:
+            "যোজন ব্যান্ড ও পরিবহন ব্যান্ডের মধ্যবর্তী শক্তি ব্যবধান 0.7 eV হলে সেটি নিচের কোনটি?",
+          options: {
+            a: "ধাতু",
+            b: "অন্তরক",
+            c: "অর্ধপরিবাহী",
+            d: "সংকর ধাতু",
+          },
+          correct: "c",
+          explanation:
+            "0.7 eV শক্তি ব্যবধান অর্ধপরিবাহীর বৈশিষ্ট্য, যা জার্মেনিয়ামের ব্যান্ড গ্যাপের কাছাকাছি।",
+        },
+        {
+          id: 32,
+          question:
+            "অন্তরকে যোজন ব্যান্ড ও পরিবহন ব্যান্ডের মধ্যবর্তী নিষিদ্ধ শক্তি ব্যবধানের ক্রম কত?",
+          options: {
+            a: "1 MeV",
+            b: "0.1 MeV",
+            c: "1 eV",
+            d: "6.0 eV",
+          },
+          correct: "d",
+          explanation:
+            "অন্তরক পদার্থের নিষিদ্ধ শক্তি ব্যবধান (ব্যান্ড গ্যাপ) তুলনামূলকভাবে বড় হয়, সাধারণত 3 eV এর বেশি। 6.0 eV এই সীমার মধ্যে একটি সাধারণ মান।",
+        },
+        {
+          id: 33,
+          question:
+            "একটি বিশুদ্ধ অর্ধপরিবাহীর পরম শূন্য তাপমাত্রায় (0 K) পরিবাহিতা কত?",
+          options: {
+            a: "0 (ohm-m)⁻¹",
+            b: "অসীম",
+            c: "10³ (ohm-m)⁻¹",
+            d: "10⁷ (ohm-m)⁻¹",
+          },
+          correct: "a",
+          explanation:
+            "পরম শূন্য তাপমাত্রায় (0 K), বিশুদ্ধ অর্ধপরিবাহীর সব ইলেকট্রন যোজন ব্যান্ডে আবদ্ধ থাকে এবং কোনো মুক্ত ইলেকট্রন না থাকায় এটি একটি পূর্ণ অন্তরক হিসেবে কাজ করে। তাই এর পরিবাহিতা শূন্য হয়।",
+        },
+        {
+          id: 34,
+          question:
+            "n-টাইপ অর্ধপরিবাহী তৈরির জন্য বিশুদ্ধ জার্মেনিয়ামের সাথে যে অপদ্রব্য মিশাতে হয় সেটি নিচের কোনটি?",
+          options: {
+            a: "ফসফরাস",
+            b: "অ্যালুমিনিয়াম",
+            c: "বোরন",
+            d: "স্বর্ণ",
+          },
+          correct: "a",
+          explanation:
+            "n-টাইপ অর্ধপরিবাহী তৈরি করতে বিশুদ্ধ জার্মেনিয়াম (চতুর্যোজী) এর সাথে পঞ্চযোজী অপদ্রব্য (যেমন ফসফরাস) মিশ্রিত করা হয়।",
+        },
+        {
+          id: 35,
+          question: "অর্ধপরিবাহীতে গরিষ্ঠ আধান বাহক কোনটি?",
+          options: {
+            a: "n-টাইপে হোল এবং p-টাইপে ইলেকট্রন",
+            b: "n-টাইপ ও p-টাইপ উভয়েই ইলেকট্রন",
+            c: "n-টাইপে ইলেকট্রন এবং p-টাইপে হোল",
+            d: "n-টাইপ ও p-টাইপ উভয়েই হোল",
+          },
+          correct: "c",
+          explanation:
+            "n-টাইপ অর্ধপরিবাহীতে ইলেকট্রন হলো গরিষ্ঠ আধান বাহক এবং p-টাইপ অর্ধপরিবাহীতে হোল হলো গরিষ্ঠ আধান বাহক।",
+        },
+        {
+          id: 36,
+          question: "n-টাইপ অর্ধপরিবাহীতে কী মিশানো হয়?",
+          options: {
+            a: "দ্বিযোজী মৌল",
+            b: "ত্রিযোজী মৌল",
+            c: "চতুর্যোজী মৌল",
+            d: "পঞ্চযোজী মৌল",
+          },
+          correct: "d",
+          explanation:
+            "n-টাইপ অর্ধপরিবাহী তৈরি করতে বিশুদ্ধ অর্ধপরিবাহীর সাথে পঞ্চযোজী অপদ্রব্য (যেমন ফসফরাস, আর্সেনিক) মিশ্রিত করা হয়।",
+        },
+        {
+          id: 37,
+          question:
+            "নিচের কোনটিকে ডোপেন্ট হিসাবে ব্যবহার করলে p-টাইপ অর্ধপরিবাহীর ধর্ম পাওয়া যাবে না?",
+          options: {
+            a: "অ্যালুমিনিয়াম",
+            b: "এন্টিমনি",
+            c: "গ্যালিয়াম",
+            d: "ইন্ডিয়াম",
+          },
+          correct: "b",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহী তৈরি করতে ত্রিযোজী মৌল ব্যবহার করা হয়। অ্যালুমিনিয়াম, গ্যালিয়াম এবং ইন্ডিয়াম ত্রিযোজী। অ্যান্টিমনি একটি পঞ্চযোজী মৌল, যা n-টাইপ অর্ধপরিবাহী তৈরি করে।",
+        },
+        {
+          id: 38,
+          question:
+            "একটি অপদ্রবযুক্ত অর্ধপরিবাহী p- অথবা n-ধরন নির্ণয় করা হয়-",
+          options: {
+            a: "এর বিদ্যুৎ পরিবাহিতা মেপে",
+            b: "হল-ইফেক্ট পরীক্ষার সাহায্যে",
+            c: "এর তাপ ধারকত্ব মেপে",
+            d: "এর রোধের সহগ মেপে",
+          },
+          correct: "b",
+          explanation:
+            "হল-ইফেক্ট (Hall effect) পরীক্ষার মাধ্যমে অর্ধপরিবাহীর আধান বাহকের ধরণ (ইলেকট্রন নাকি হোল) এবং তাদের ঘনত্ব নির্ণয় করা যায়, যা p-টাইপ বা n-টাইপ নির্ধারণে সাহায্য করে।",
+        },
+        {
+          id: 39,
+          question:
+            "তাপমাত্রা বাড়ার সাথে সাথে কোনটির বিদ্যুৎ পরিবাহিতা বাড়ে?",
+          options: {
+            a: "Al",
+            b: "Fe",
+            c: "Ag",
+            d: "Si",
+          },
+          correct: "d",
+          explanation:
+            "ধাতব পরিবাহীর (Al, Fe, Ag) ক্ষেত্রে তাপমাত্রা বাড়ালে পরিবাহিতা কমে। কিন্তু অর্ধপরিবাহী (Si) এর ক্ষেত্রে তাপমাত্রা বাড়ালে পরিবাহিতা বাড়ে।",
+        },
+        {
+          id: 40,
+          question:
+            "একটি জার্মেনিয়াম কেলাসকে p-টাইপ অর্ধপরিবাহীতে রূপান্তরিত করতে প্রয়োজন-",
+          options: {
+            a: "অতিরিক্ত আলফা কণিকা",
+            b: "ত্রিযোজী অপদ্রব্য",
+            c: "পঞ্চযোজী অপদ্রব্য",
+            d: "ওপরের সবকটি",
+          },
+          correct: "b",
+          explanation:
+            "p-টাইপ অর্ধপরিবাহী তৈরি করতে জার্মেনিয়াম (চতুর্যোজী) এর সাথে ত্রিযোজী অপদ্রব্য (যেমন বোরন, অ্যালুমিনিয়াম) মিশ্রিত করা হয়।",
+        },
+        {
+          id: 41,
+          question:
+            "যে সব পদার্থের পরিবাহিতা অন্তরকের চেয়ে বেশি কিন্তু পরিবাহীর চেয়ে কম তাদেরকে কী বলে?",
+          options: {
+            a: "অন্তরক",
+            b: "অপরিবাহী",
+            c: "অর্ধপরিবাহী",
+            d: "পরিবাহী",
+          },
+          correct: "c",
+          explanation: "এটি অর্ধপরিবাহী পদার্থের সংজ্ঞা।",
+        },
+        {
+          id: 42,
+          question: "অ্যালুমিনিয়াম কীরূপ পদার্থ?",
+          options: {
+            a: "পরিবাহী",
+            b: "অর্ধপরিবাহী",
+            c: "অপরিবাহী",
+            d: "অন্তরক",
+          },
+          correct: "a",
+          explanation:
+            "অ্যালুমিনিয়াম একটি ধাতু এবং এটি বিদ্যুৎ ও তাপের সুপরিবাহী।",
+        },
+        {
+          id: 43,
+          question: "অর্ধপরিবাহকের পরিবাহিতা বৃদ্ধির উপায়-",
+          options: {
+            a: "আয়তন পরিবর্তন",
+            b: "ঘনত্ব পরিবর্তন",
+            c: "ভেজাল মিশ্রিতকরণ",
+            d: "উপাদান কম বেশি",
+          },
+          correct: "c",
+          explanation:
+            "অর্ধপরিবাহকের পরিবাহিতা বৃদ্ধির প্রধান উপায় হলো ডোপিং বা ভেজাল মিশ্রিতকরণ (অপদ্রব্য যোগ করা)।",
+        },
+        {
+          id: 44,
+          question: "অর্ধপরিবাহীতে তড়িৎ পরিবহনে অংশ গ্রহণ করে-",
+          options: {
+            a: "শুধুমাত্র ইলেকট্রন",
+            b: "শুধুমাত্র হোল",
+            c: "হোল ও ইলেকট্রন",
+            d: "ইলেকট্রন বা হোল কোনোটিই নয়",
+          },
+          correct: "c",
+          explanation:
+            "অর্ধপরিবাহীতে ইলেকট্রন এবং হোল উভয়ই তড়িৎ পরিবহনে অংশ নেয়।",
+        },
+        {
+          id: 45,
+          question: "জার্মেনিয়ামের যোজনী হলো-",
+          options: {
+            a: "2",
+            b: "3",
+            c: "4",
+            d: "5",
+          },
+          correct: "c",
+          explanation:
+            "জার্মেনিয়াম পর্যায় সারণীর 14 নং গ্রুপে অবস্থিত, এবং এর যোজনী 4।",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                            <label class="option" data-option="${option}">
+                                            <div class="circle">${option}</div>
+                                            <span class="option-text">${question.options[option]}</span>
+                                            </label>`;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                                                     <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                                                     <div class="explanation-content">
+                                                                                                       <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                                                       ${question.explanation}
+                                                                                                     </div>
+                                                                                                   </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                                                <p class="question-label">${
+                                                                                                  index +
+                                                                                                  1
+                                                                                                }. ${
+            question.question
+          }</p>
+                                                                                                <div class="options">
+                                                                                                  ${optionsHTML}
+                                                                                                </div>
+                                                                                                ${explanationHTML}
+                                                                                              `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
